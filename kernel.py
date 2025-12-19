@@ -85,6 +85,18 @@ def execute_action(action: Dict[str, Any]):
         print("🔙 Going Back")
         run_adb_command(["shell", "input", "keyevent", "KEYCODE_BACK"])
         
+    elif act_type == "recent":
+        print("📱 Opening Recent Apps")
+        run_adb_command(["shell", "input", "keyevent", "KEYCODE_APP_SWITCH"])
+        
+    elif act_type == "settings":
+        print("⚙️ Opening Settings")
+        run_adb_command(["shell", "input", "keyevent", "KEYCODE_SETTINGS"])
+        
+    elif act_type == "notification":
+        print("🔔 Opening Notification Panel")
+        run_adb_command(["shell", "input", "keyevent", "KEYCODE_NOTIFICATION"])
+        
     elif act_type == "wait":
         print("⏳ Waiting...")
         time.sleep(2)
@@ -109,6 +121,9 @@ def get_llm_decision(goal: str, screen_context: str) -> Dict[str, Any]:
     - {"action": "type", "text": "Hello World", "reason": "Why you are typing"}
     - {"action": "home", "reason": "Go to home screen"}
     - {"action": "back", "reason": "Go back"}
+    - {"action": "recent", "reason": "Open recent apps screen"}
+    - {"action": "settings", "reason": "Open Android settings"}
+    - {"action": "notification", "reason": "Open notification panel"}
     - {"action": "wait", "reason": "Wait for loading"}
     - {"action": "done", "reason": "Task complete"}
     
