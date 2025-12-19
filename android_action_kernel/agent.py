@@ -22,7 +22,7 @@ class AndroidAgent:
         self.llm_client = LLMClient(config)
         self.action_executor = ActionExecutor(config)
     
-    def run(self, goal: str, max_steps: int = 10) -> None:
+    def run(self, goal: str, max_steps: int = 20) -> None:
         """
         Runs the Android agent loop: perception -> reasoning -> action.
         
