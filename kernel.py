@@ -60,11 +60,11 @@ def execute_action(action: Dict[str, Any]):
         
     elif act_type == "home":
         print("🏠 Going Home")
-        run_adb_command(["shell", "input", "keyevent", "KEYWORDS_HOME"])
+        run_adb_command(["shell", "input", "keyevent", "KEYCODE_HOME"])
         
     elif act_type == "back":
         print("🔙 Going Back")
-        run_adb_command(["shell", "input", "keyevent", "KEYWORDS_BACK"])
+        run_adb_command(["shell", "input", "keyevent", "KEYCODE_BACK"])
         
     elif act_type == "wait":
         print("⏳ Waiting...")
