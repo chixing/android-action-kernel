@@ -44,9 +44,30 @@ class ActionExecutor:
         if not action_type:
             raise ValueError("Action missing 'action' field")
         
+        # Map common invalid actions to valid ones
+        action_mapping = {
+            "open_app": "home",  # To open an app, go to home first
+            "launch_app": "home",
+            "navigate": "home",
+            "click": "tap",
+            "press": "tap",
+        }
+        
+        # Try to map invalid action to valid one
+        if action_type not in self._action_handlers:
+            mapped_action = action_mapping.get(action_type.lower())
+            if mapped_action:
+                print(f"⚠️ Mapped invalid action '{action_type}' to '{mapped_action}'")
+                action_type = mapped_action
+                action["action"] = mapped_action
+        
         handler = self._action_handlers.get(action_type)
         if not handler:
-            raise ValueError(f"Unknown action type: {action_type}")
+            valid_actions = ", ".join(self._action_handlers.keys())
+            raise ValueError(
+                f"Unknown action type: {action_type}. "
+                f"Valid actions are: {valid_actions}"
+            )
         
         handler(action)
     

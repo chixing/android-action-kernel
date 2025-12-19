@@ -53,7 +53,7 @@ class Config:
             )
             config.provider_name = "GLM-4.6"
         elif provider_env == "ollama":
-            config.model = os.environ.get("OLLAMA_MODEL", "functiongemma")
+            config.model = os.environ.get("OLLAMA_MODEL", "gemma3")
             config.api_url = os.environ.get(
                 "OLLAMA_API_URL", 
                 "http://localhost:11434/v1"
