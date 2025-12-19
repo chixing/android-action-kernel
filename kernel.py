@@ -2,17 +2,22 @@ import os
 import time
 import subprocess
 import json
-from typing import Dict, Any
+from typing import Dict, Any, List
 from openai import OpenAI
 import sanitizer
 
 # --- CONFIGURATION ---
 ADB_PATH = "adb"  # Ensure adb is in your PATH
-MODEL = "gpt-4o"  # Or "gpt-4-turbo" for faster/cheaper execution
+MODEL = "gpt-5.1-codex"
 SCREEN_DUMP_PATH = "/sdcard/window_dump.xml"
 LOCAL_DUMP_PATH = "window_dump.xml"
+LOCAL_API_URL = "http://localhost:8317/v1"
+LOCAL_API_KEY = os.environ.get("LOCAL_API_KEY", "your-api-key-1")
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+client = OpenAI(
+    api_key=LOCAL_API_KEY,
+    base_url=LOCAL_API_URL
+)
 
 def run_adb_command(command: List[str]):
     """Executes a shell command via ADB."""
