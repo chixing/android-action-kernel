@@ -159,13 +159,8 @@ def _extract_element_data(node: ET.Element) -> Optional[Dict]:
     if hint:
         element_data["hint"] = hint
     
-    # Determine primary action
-    if is_clickable:
-        element_data["action"] = "tap"
-    elif is_focusable:
-        element_data["action"] = "focus"
-    else:
-        element_data["action"] = "read"
+    # Note: We don't include an "action" field here to avoid confusing the LLM
+    # The LLM can determine what action to take based on clickable/focusable fields
     
     return element_data
 

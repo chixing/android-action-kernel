@@ -50,7 +50,12 @@ class JSONModeClient:
                 {"role": "system", "content": get_system_prompt_json_mode().strip()},
                 {
                     "role": "user", 
-                    "content": f"GOAL: {goal}\n\nSCREEN_CONTEXT:\n{screen_context}"
+                    "content": (
+                        f"GOAL: {goal}\n\n"
+                        f"SCREEN_CONTEXT:\n{screen_context}\n\n"
+                        f"IMPORTANT: Output a JSON object with an 'action' field. "
+                        f"For example: {{\"action\": \"home\", \"reason\": \"Going to home screen to find YouTube app\"}}"
+                    )
                 }
             ]
         }
@@ -83,8 +88,30 @@ class JSONModeClient:
                 f"(status: {finish_reason})"
             )
             
+            # Debug: Show the JSON response
+            if self.config.debug_llm_payload:
+                print(f"🔍 Debug - JSON Response: {content[:500]}")
+            
             try:
-                return json.loads(content)
+                parsed_json = json.loads(content)
+                if self.config.debug_llm_payload:
+                    print(f"🔍 Debug - Parsed JSON: {json.dumps(parsed_json, indent=2)}")
+                
+                # Validate that the response has the required "action" field
+                if not isinstance(parsed_json, dict):
+                    raise LLMError(
+                        f"LLM response is not a JSON object. Got: {type(parsed_json).__name__}\n"
+                        f"Response: {content[:200]}"
+                    )
+                
+                if "action" not in parsed_json:
+                    raise LLMError(
+                        f"LLM response missing required 'action' field.\n"
+                        f"Response keys: {list(parsed_json.keys())}\n"
+                        f"Response: {content[:300]}"
+                    )
+                
+                return parsed_json
             except json.JSONDecodeError as e:
                 # Log the actual content for debugging
                 content_preview = content[:200] if len(content) > 200 else content

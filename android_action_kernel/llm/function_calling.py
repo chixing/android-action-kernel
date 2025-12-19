@@ -46,7 +46,6 @@ class FunctionCallingClient:
         payload = {
             "model": self.config.model,
             "tools": get_action_tools(),
-            "tool_choice": "required",  # Force function call
             "messages": [
                 {"role": "system", "content": get_system_prompt_function_calling().strip()},
                 {
@@ -55,6 +54,11 @@ class FunctionCallingClient:
                 }
             ]
         }
+        
+        # Only set tool_choice for non-Ollama providers
+        # Ollama may not support "required" tool_choice
+        if self.config.provider != "ollama":
+            payload["tool_choice"] = "required"  # Force function call
         
         if self.config.debug_llm_payload:
             print_payload_debug(payload)
@@ -69,13 +73,44 @@ class FunctionCallingClient:
             finish_reason = choice.finish_reason
             message = choice.message
             
+            # Debug: Print response details
+            if self.config.debug_llm_payload:
+                print(f"🔍 Debug - Finish reason: {finish_reason}")
+                print(f"🔍 Debug - Message content: {message.content}")
+                print(f"🔍 Debug - Tool calls: {message.tool_calls}")
+                print(f"🔍 Debug - Message object: {message}")
+            
             # Handle function calling response
             if not message.tool_calls or len(message.tool_calls) == 0:
-                raise LLMError("No function call in LLM response")
+                # Try to extract function call from content if tool_calls is missing
+                # Some Ollama models might return function calls in content instead
+                if message.content:
+                    error_msg = (
+                        f"No function call in LLM response. "
+                        f"Finish reason: {finish_reason}, "
+                        f"Content: {message.content[:200]}"
+                    )
+                else:
+                    error_msg = (
+                        f"No function call in LLM response. "
+                        f"Finish reason: {finish_reason}"
+                    )
+                raise LLMError(error_msg)
             
             tool_call = message.tool_calls[0]
             function_name = tool_call.function.name
-            function_args = json.loads(tool_call.function.arguments)
+            
+            # Parse function arguments
+            try:
+                function_args = json.loads(tool_call.function.arguments)
+            except json.JSONDecodeError as e:
+                # Try to handle malformed JSON from Ollama
+                error_msg = (
+                    f"Failed to parse function arguments as JSON: {str(e)}\n"
+                    f"Raw arguments: {repr(tool_call.function.arguments)}"
+                )
+                print(f"❌ {self.config.provider_name} API: {error_msg}")
+                raise LLMError(error_msg) from e
             
             # Convert function call to action format
             action = {
@@ -83,11 +118,31 @@ class FunctionCallingClient:
                 "reason": function_args.get("reason", "No reason provided")
             }
             
-            # Add action-specific parameters
+            # Add action-specific parameters with type conversion for Ollama
             if function_name == "tap":
-                action["coordinates"] = function_args["coordinates"]
+                coordinates = function_args.get("coordinates", [])
+                if not coordinates:
+                    raise LLMError("Tap action missing 'coordinates' field")
+                
+                # Ollama may return coordinates as strings, convert to numbers
+                try:
+                    if isinstance(coordinates, list) and len(coordinates) == 2:
+                        # Convert string coordinates to numbers if needed
+                        coords = [
+                            float(coordinates[0]) if isinstance(coordinates[0], str) else float(coordinates[0]),
+                            float(coordinates[1]) if isinstance(coordinates[1], str) else float(coordinates[1])
+                        ]
+                        action["coordinates"] = [int(coords[0]), int(coords[1])]
+                    else:
+                        raise LLMError(f"Invalid coordinates format: {coordinates}")
+                except (ValueError, TypeError, IndexError) as e:
+                    raise LLMError(f"Failed to parse coordinates: {coordinates}") from e
+                    
             elif function_name == "type":
-                action["text"] = function_args["text"]
+                text = function_args.get("text")
+                if not text:
+                    raise LLMError("Type action missing 'text' field")
+                action["text"] = str(text)
             
             print(
                 f"✅ {self.config.provider_name} API: Success "
