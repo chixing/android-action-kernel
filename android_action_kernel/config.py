@@ -52,6 +52,17 @@ class Config:
                 os.environ.get("LOCAL_API_KEY", "your-api-key-1")
             )
             config.provider_name = "GLM-4.6"
+        elif provider_env == "ollama":
+            config.model = os.environ.get("OLLAMA_MODEL", "functiongemma")
+            config.api_url = os.environ.get(
+                "OLLAMA_API_URL", 
+                "http://localhost:11434/v1"
+            )
+            config.api_key = os.environ.get(
+                "OLLAMA_API_KEY", 
+                "ollama"  # Ollama doesn't require a real key, but some clients expect it
+            )
+            config.provider_name = "Ollama"
         else:
             config.model = os.environ.get("OPENAI_MODEL", "gpt-5.1-codex")
             config.api_url = os.environ.get(

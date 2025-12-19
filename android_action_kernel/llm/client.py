@@ -5,6 +5,7 @@ from openai import OpenAI
 
 from ..config import Config
 from .json_mode import JSONModeClient
+from .function_calling import FunctionCallingClient
 
 
 class LLMClient:
@@ -24,7 +25,10 @@ class LLMClient:
         )
         
         # Select handler based on provider
-        self.handler = JSONModeClient(config, self.client)
+        if config.provider == "ollama":
+            self.handler = FunctionCallingClient(config, self.client)
+        else:
+            self.handler = JSONModeClient(config, self.client)
     
     def get_decision(self, goal: str, screen_context: str) -> Dict[str, Any]:
         """
