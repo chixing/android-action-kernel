@@ -21,9 +21,14 @@ client = OpenAI(
 
 def run_adb_command(command: List[str]):
     """Executes a shell command via ADB."""
-    result = subprocess.run([ADB_PATH] + command, capture_output=True, text=True)
-    if result.stderr and "error" in result.stderr.lower():
-        print(f"❌ ADB Error: {result.stderr.strip()}")
+    full_command = [ADB_PATH] + command
+    print(f"🔧 ADB: {' '.join(full_command)}")
+    
+    result = subprocess.run(full_command, capture_output=True, text=True)
+    
+    if result.returncode != 0:
+        print(f"❌ ADB failed (code {result.returncode}): {result.stderr.strip()}")
+    
     return result.stdout.strip()
 
 def get_screen_state() -> str:
@@ -97,16 +102,24 @@ def get_llm_decision(goal: str, screen_context: str) -> Dict[str, Any]:
     {"action": "tap", "coordinates": [540, 1200], "reason": "Clicking the 'Connect' button"}
     """
     
-    response = client.chat.completions.create(
-        model=MODEL,
-        response_format={"type": "json_object"},
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"GOAL: {goal}\n\nSCREEN_CONTEXT:\n{screen_context}"}
-        ]
-    )
+    print(f"🤖 OpenAI API: Requesting decision (model: {MODEL}, url: {LOCAL_API_URL})")
     
-    return json.loads(response.choices[0].message.content)
+    try:
+        response = client.chat.completions.create(
+            model=MODEL,
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"GOAL: {goal}\n\nSCREEN_CONTEXT:\n{screen_context}"}
+            ]
+        )
+        
+        print(f"✅ OpenAI API: Success (status: {response.choices[0].finish_reason})")
+        return json.loads(response.choices[0].message.content)
+        
+    except Exception as e:
+        print(f"❌ OpenAI API: Error - {type(e).__name__}: {str(e)}")
+        raise
 
 def run_agent(goal: str, max_steps=10):
     print(f"🚀 Android Use Agent Started. Goal: {goal}")
