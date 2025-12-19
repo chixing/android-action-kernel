@@ -54,7 +54,10 @@ class JSONModeClient:
                         f"GOAL: {goal}\n\n"
                         f"SCREEN_CONTEXT:\n{screen_context}\n\n"
                         f"IMPORTANT: Output a JSON object with an 'action' field. "
-                        f"For example: {{\"action\": \"home\", \"reason\": \"Going to home screen to find YouTube app\"}}"
+                        f"For example: {{\"action\": \"home\", \"reason\": \"Going to home screen to find YouTube app\"}}\n\n"
+                        f"CRITICAL: If the goal '{goal}' has been achieved based on the current screen state, "
+                        f"you MUST return {{\"action\": \"done\", \"reason\": \"Goal achieved: [what was accomplished]\"}}. "
+                        f"Do NOT continue taking actions after the goal is complete."
                     )
                 }
             ]

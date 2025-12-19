@@ -1,5 +1,4 @@
 """Action execution handlers for Android actions."""
-import sys
 import time
 import re
 from typing import Dict, Any, Callable
@@ -496,6 +495,6 @@ class ActionExecutor:
             print(f"❌ Failed to get screen info: {str(e)}")
     
     def _handle_done(self, action: Dict[str, Any]) -> None:
-        """Handle done action - exits the program."""
+        """Handle done action - task is complete."""
         print("✅ Goal Achieved.")
-        sys.exit(0)
+        # Note: The agent loop will handle exiting when it sees this action

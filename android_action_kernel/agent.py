@@ -47,6 +47,11 @@ class AndroidAgent:
                 reason = decision.get('reason', 'No reason provided')
                 print(f"💡 Decision: {reason}")
                 
+                # Check if task is complete
+                if decision.get('action') == 'done':
+                    print("✅ Goal Achieved.")
+                    return
+                
                 # 3. Action
                 self.action_executor.execute(decision)
                 

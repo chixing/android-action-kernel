@@ -47,7 +47,13 @@ def get_system_prompt_json_mode() -> str:
     
     Control:
     {"action": "wait", "reason": "Wait for loading"}
-    {"action": "done", "reason": "Task complete"}
+    {"action": "done", "reason": "Task complete - USE THIS when the goal has been achieved"}
+    
+    CRITICAL: When the user's goal has been successfully completed, you MUST return {"action": "done", "reason": "Goal achieved: [brief description]"}. 
+    Do NOT continue taking actions after the goal is complete. Examples:
+    - If goal is "open app X", return "done" after the app is opened
+    - If goal is "activate voice typing", return "done" after voice typing is activated
+    - If goal is "open app and do Y", return "done" after both actions are complete
     
     To open an app: Use "open_app" with package name (e.g., "com.whatsapp"), or use "home" then "tap" on app icon.
     To scroll: Use "swipe_down" or "swipe_up" for vertical scrolling, or "swipe" with custom coordinates.
