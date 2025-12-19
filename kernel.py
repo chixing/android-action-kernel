@@ -11,6 +11,10 @@ ADB_PATH = "adb"  # Ensure adb is in your PATH
 SCREEN_DUMP_PATH = "/sdcard/window_dump.xml"
 LOCAL_DUMP_PATH = "window_dump.xml"
 
+# Debug Configuration
+# Set DEBUG_LLM_PAYLOAD environment variable to "1" or "true" to enable payload debugging
+DEBUG_LLM_PAYLOAD = os.environ.get("DEBUG_LLM_PAYLOAD", "false").lower() in ("1", "true", "yes")
+
 # LLM Provider Configuration
 # Set LLM_PROVIDER environment variable to "openai" or "glm" (default: "openai")
 LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openai").lower()
@@ -105,6 +109,42 @@ def execute_action(action: Dict[str, Any]):
         print("✅ Goal Achieved.")
         exit(0)
 
+def print_payload_debug(payload: Dict[str, Any]):
+    """Pretty prints the LLM payload for debugging purposes."""
+    print("\n" + "="*80)
+    print("📤 Payload being sent to LLM:")
+    print("="*80)
+    print(f"\n🔧 Model: {payload['model']}")
+    print(f"📋 Response Format: {json.dumps(payload['response_format'], indent=2)}")
+    print(f"\n💬 Messages ({len(payload['messages'])}):")
+    print("-"*80)
+    
+    for i, msg in enumerate(payload['messages'], 1):
+        print(f"\n  Message {i} - Role: {msg['role'].upper()}")
+        print("  " + "-"*76)
+        content = msg['content']
+        
+        if msg['role'] == 'system':
+            # Print system prompt with indentation
+            print("  " + content.replace('\n', '\n  '))
+        else:
+            # Parse and pretty print the user message
+            if 'GOAL:' in content:
+                goal_part, screen_part = content.split('\n\nSCREEN_CONTEXT:\n', 1)
+                print("  " + goal_part.replace('\n', '\n  '))
+                print("\n  SCREEN_CONTEXT:")
+                try:
+                    # Parse the JSON screen context and pretty print it
+                    screen_data = json.loads(screen_part)
+                    print("  " + json.dumps(screen_data, indent=4, ensure_ascii=False).replace('\n', '\n  '))
+                except json.JSONDecodeError:
+                    # If it's not valid JSON, just print as-is
+                    print("  " + screen_part.replace('\n', '\n  '))
+            else:
+                print("  " + content.replace('\n', '\n  '))
+    
+    print("\n" + "="*80 + "\n")
+
 def get_llm_decision(goal: str, screen_context: str) -> Dict[str, Any]:
     """Sends screen context to LLM and asks for the next move."""
     system_prompt = """
@@ -133,15 +173,22 @@ def get_llm_decision(goal: str, screen_context: str) -> Dict[str, Any]:
     
     print(f"🤖 {PROVIDER_NAME} API: Requesting decision (model: {MODEL}, url: {API_URL})")
     
+    # Construct the payload
+    payload = {
+        "model": MODEL,
+        "response_format": {"type": "json_object"},
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"GOAL: {goal}\n\nSCREEN_CONTEXT:\n{screen_context}"}
+        ]
+    }
+    
+    # Display the payload if debugging is enabled
+    if DEBUG_LLM_PAYLOAD:
+        print_payload_debug(payload)
+    
     try:
-        response = client.chat.completions.create(
-            model=MODEL,
-            response_format={"type": "json_object"},
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": f"GOAL: {goal}\n\nSCREEN_CONTEXT:\n{screen_context}"}
-            ]
-        )
+        response = client.chat.completions.create(**payload)
         
         print(f"✅ {PROVIDER_NAME} API: Success (status: {response.choices[0].finish_reason})")
         return json.loads(response.choices[0].message.content)
