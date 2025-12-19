@@ -8,15 +8,29 @@ import sanitizer
 
 # --- CONFIGURATION ---
 ADB_PATH = "adb"  # Ensure adb is in your PATH
-MODEL = "gpt-5.1-codex"
 SCREEN_DUMP_PATH = "/sdcard/window_dump.xml"
 LOCAL_DUMP_PATH = "window_dump.xml"
-LOCAL_API_URL = "http://localhost:8317/v1"
-LOCAL_API_KEY = os.environ.get("LOCAL_API_KEY", "your-api-key-1")
+
+# LLM Provider Configuration
+# Set LLM_PROVIDER environment variable to "openai" or "glm" (default: "openai")
+LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "openai").lower()
+
+if LLM_PROVIDER == "glm":
+    # GLM-4.6 Configuration (Zhipu AI)
+    MODEL = "GLM-4.6"
+    API_URL = os.environ.get("GLM_API_URL", "https://api.z.ai/api/coding/paas/v4")
+    API_KEY = os.environ.get("ZHIPU_API_KEY", os.environ.get("LOCAL_API_KEY", "your-api-key-1"))
+    PROVIDER_NAME = "GLM-4.6"
+else:
+    # OpenAI Configuration (default) - uses localhost API
+    MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.1-codex")
+    API_URL = os.environ.get("OPENAI_API_URL", "http://localhost:8317/v1")
+    API_KEY = os.environ.get("OPENAI_API_KEY", os.environ.get("LOCAL_API_KEY", "your-api-key-1"))
+    PROVIDER_NAME = "OpenAI"
 
 client = OpenAI(
-    api_key=LOCAL_API_KEY,
-    base_url=LOCAL_API_URL
+    api_key=API_KEY,
+    base_url=API_URL
 )
 
 def run_adb_command(command: List[str]):
@@ -102,7 +116,7 @@ def get_llm_decision(goal: str, screen_context: str) -> Dict[str, Any]:
     {"action": "tap", "coordinates": [540, 1200], "reason": "Clicking the 'Connect' button"}
     """
     
-    print(f"🤖 OpenAI API: Requesting decision (model: {MODEL}, url: {LOCAL_API_URL})")
+    print(f"🤖 {PROVIDER_NAME} API: Requesting decision (model: {MODEL}, url: {API_URL})")
     
     try:
         response = client.chat.completions.create(
@@ -114,15 +128,16 @@ def get_llm_decision(goal: str, screen_context: str) -> Dict[str, Any]:
             ]
         )
         
-        print(f"✅ OpenAI API: Success (status: {response.choices[0].finish_reason})")
+        print(f"✅ {PROVIDER_NAME} API: Success (status: {response.choices[0].finish_reason})")
         return json.loads(response.choices[0].message.content)
         
     except Exception as e:
-        print(f"❌ OpenAI API: Error - {type(e).__name__}: {str(e)}")
+        print(f"❌ {PROVIDER_NAME} API: Error - {type(e).__name__}: {str(e)}")
         raise
 
 def run_agent(goal: str, max_steps=10):
     print(f"🚀 Android Use Agent Started. Goal: {goal}")
+    print(f"📡 Using LLM Provider: {PROVIDER_NAME} ({MODEL})")
     
     for step in range(max_steps):
         print(f"\n--- Step {step + 1} ---")
