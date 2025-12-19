@@ -1,0 +1,12 @@
+# Cursor Rules for Android Action Kernel
+
+## Python Package Management
+- Use `uv` for all Python package management tasks
+- Install dependencies with: `uv pip install -r requirements.txt`
+- Create virtual environments with: `uv venv`
+- Run Python scripts with: `uv run python script.py`
+
+## Project Setup
+- This project requires Python 3.10+
+- Dependencies are managed via `requirements.txt`
+- Use `uv` instead of `pip` for all package operations
